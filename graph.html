@@ -39,24 +39,42 @@ for (var i=0; i<NODE_COUNT; i++) {
 	addVertex(200 + r * Math.cos(fi),
 						200 + r * Math.sin(fi));
 }
-var superv = []; // Super-triangle necessary for the algorithm
-superv[0] = addVertex (200 + 0           , 200 + 2   * RADIUS);
-superv[1] = addVertex (200 + 2.5 * RADIUS, 200 - 1.2 * RADIUS);
-superv[2] = addVertex (200 - 2.5 * RADIUS, 200 - 1.2 * RADIUS);
-addEdge (NODE_COUNT  , NODE_COUNT+1);
-addEdge (NODE_COUNT  , NODE_COUNT+2);
-addEdge (NODE_COUNT+1, NODE_COUNT+2);
 
-/*
-	Puts all the edges, producing a full graph.
-*/
-for (var i=0; i<NODE_COUNT; i++) {
-	for (var j=i+1; j<NODE_COUNT; j++) {
-		addEdge(i,j);
-	}
-}
+	// TODO: Initialize triangle set. It will be useful throughout the execution
 
 drawGraph();
+
+/*
+	Constructs the Delaunay triangulation for the set of vertices
+	using the Bowyer-Watson algorithm.
+*/
+function delaunay() {
+	var superv = []; // Add super-triangle necessary for the algorithm
+	superv[0] = addVertex (200 + 0           , 200 + 2   * RADIUS);
+	superv[1] = addVertex (200 + 2.5 * RADIUS, 200 - 1.2 * RADIUS);
+	superv[2] = addVertex (200 - 2.5 * RADIUS, 200 - 1.2 * RADIUS);
+	addEdge (NODE_COUNT  , NODE_COUNT+1);
+	addEdge (NODE_COUNT  , NODE_COUNT+2);
+	addEdge (NODE_COUNT+1, NODE_COUNT+2);
+
+	for (var i=0; i<NODE_COUNT; i++) {
+		/*
+			TODO: Add vertice to triangulation like in following pseudocode
+			initialize the edge buffer
+			for each triangle currently in the triangle list
+				 calculate the triangle circumcircle center and radius
+				 if the point lies in the triangle circumcircle then
+						add the three triangle edges to the edge buffer
+						remove the triangle from the triangle list
+				 endif
+			endfor
+			delete all doubly specified edges from the edge buffer
+				 this leaves the edges of the enclosing polygon only
+			add to the triangle list all triangles formed between the point
+				 and the edges of the enclosing polygon
+		*/
+	}
+}
 
 // Adds vertex. Returns index of the new vertex
 function addVertex(x,y) {
