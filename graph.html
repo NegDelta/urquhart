@@ -2,18 +2,20 @@
 <html>
 <head>
 <title>Graph demo</title>
-<style>
-
-</style>
-
 </head>
 <body>
 
-
-<canvas id="port" width="6" height="6" style="border:1px solid #000000;">
+<canvas id="port" style="border:1px solid #000000;">
 </canvas>
 
 <script>
+// Window-specific inits
+var canvas = document.getElementById("port");
+canvas.width  = 400;
+canvas.height = 400;
+var ctx = canvas.getContext("2d");
+
+
 var NODE_COUNT = 10;
 var RADIUS = 180; // max radius of circle containing all the nodes
 
@@ -42,17 +44,9 @@ for (var i=0; i<NODE_COUNT; i++) {
 */
 for (var i=0; i<NODE_COUNT; i++) {
 	for (var j=i+1; j<NODE_COUNT; j++) {
-		//console.log(j-i);
-		//if(i==2 && j==5) {
-			addEdge(i,j);
-		//}
+		addEdge(i,j);
 	}
 }
-
-var canvas = document.getElementById("port");
-canvas.width  = 400;
-canvas.height = 400;
-var ctx = canvas.getContext("2d");
 
 drawGraph();
 
@@ -84,29 +78,27 @@ function drawEdge(a,b) {
 }
 
 function drawGraph() {
-	// set this to whatever number of items you can process at once
-	var ai = 0;
-	function doChunk() {
-		console.log(ai, G[ai]);
-		for (j in G[ai].adj) {
-			drawEdge(ai,j);
-			//console.log(j, G[i].adj.length);
-		}
-
-		ai++;
-		if (ai < G.length) {
-			// set Timeout for async iteration
-			setTimeout(doChunk, 100);
-		}
-	}
-	doChunk();
-	//processLargeArray();
-
+	// Draws nodes
 	for (i in G) {
 		ctx.beginPath();
 		ctx.arc(G[i]._x, G[i]._y, 3, 0, 2*Math.PI);
 		ctx.stroke();
 	}
+
+	// Draws edges
+	var ai = 0;
+	function asyncChunk() {
+		// At a time, edges adjacent to a single node are drawn
+		for (j in G[ai].adj) {
+			drawEdge(ai,j);
+		}
+		ai++;
+		if (ai < G.length) {
+			setTimeout(asyncChunk, 100);
+		}
+	}
+	asyncChunk();
+
 }
 
 </script>
