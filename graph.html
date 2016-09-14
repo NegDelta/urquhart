@@ -1,0 +1,115 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+<title>Graph demo</title>
+<style>
+
+</style>
+
+</head>
+<body>
+
+
+<canvas id="port" width="6" height="6" style="border:1px solid #000000;">
+</canvas>
+
+<script>
+var NODE_COUNT = 10;
+var RADIUS = 180; // max radius of circle containing all the nodes
+
+/*
+	G - a graph representation.
+	G is an array of Vertice objects, which have following attributes:
+	_x, _y - coordinates on a plane,
+	adj - adjacency array (unsorted).
+*/
+var G = [];
+
+/*
+	Puts NODE_COUNT vertices. All of them lie within a defined circle,
+	and the density decreases with distance from the center
+*/
+for (var i=0; i<NODE_COUNT; i++) {
+	r = Math.random()*RADIUS;
+	fi = Math.random()*6.283;
+
+	addVertex(200 + r * Math.cos(fi),
+						200 + r * Math.sin(fi));
+}
+
+/*
+	Puts all the edges, producing a full graph.
+*/
+for (var i=0; i<NODE_COUNT; i++) {
+	for (var j=i+1; j<NODE_COUNT; j++) {
+		//console.log(j-i);
+		//if(i==2 && j==5) {
+			addEdge(i,j);
+		//}
+	}
+}
+
+var canvas = document.getElementById("port");
+canvas.width  = 400;
+canvas.height = 400;
+var ctx = canvas.getContext("2d");
+
+drawGraph();
+
+function addVertex(x,y) {
+	G.push({
+		_x: x,
+		_y: y,
+		adj: []
+	});
+}
+
+function addEdge(a,b) {
+	if(G[a].adj.indexOf(b) == -1)
+		G[a].adj.push(b);
+	if(G[b].adj.indexOf(a) == -1)
+		G[b].adj.push(a);
+}
+
+// Returns TRUE iff there is an egde between a and b
+function checkForEdge(a,b) {
+	return (G[a].adj.indexOf(b) != -1);
+}
+
+function drawEdge(a,b) {
+	ctx.moveTo(G[a]._x, G[a]._y);
+	ctx.lineTo(G[b]._x, G[b]._y);
+	console.log(a,b);
+	ctx.stroke();
+}
+
+function drawGraph() {
+	// set this to whatever number of items you can process at once
+	var ai = 0;
+	function doChunk() {
+		console.log(ai, G[ai]);
+		for (j in G[ai].adj) {
+			drawEdge(ai,j);
+			//console.log(j, G[i].adj.length);
+		}
+
+		ai++;
+		if (ai < G.length) {
+			// set Timeout for async iteration
+			setTimeout(doChunk, 100);
+		}
+	}
+	doChunk();
+	//processLargeArray();
+
+	for (i in G) {
+		ctx.beginPath();
+		ctx.arc(G[i]._x, G[i]._y, 3, 0, 2*Math.PI);
+		ctx.stroke();
+	}
+}
+
+</script>
+
+</body>
+</html>
