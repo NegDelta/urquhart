@@ -40,9 +40,12 @@ for (var i=0; i<NODE_COUNT; i++) {
 						200 + r * Math.sin(fi));
 }
 
-	// TODO: Initialize triangle set. It will be useful throughout the execution
+// Triangle set. A triangle is represented as an ordered set of 3 vertices.
+// Vertices are represented by their index.
+var Trg = [];
 
 drawGraph();
+delaunay();
 
 /*
 	Constructs the Delaunay triangulation for the set of vertices
@@ -56,11 +59,28 @@ function delaunay() {
 	addEdge (NODE_COUNT  , NODE_COUNT+1);
 	addEdge (NODE_COUNT  , NODE_COUNT+2);
 	addEdge (NODE_COUNT+1, NODE_COUNT+2);
+	addTriangle (NODE_COUNT, NODE_COUNT+1, NODE_COUNT+2);
+
+	// Stores edges that may be removed after each search for 'bad' triangles
+	var EBuf;
 
 	for (var i=0; i<NODE_COUNT; i++) {
+		console.log("i",i,"Trg is ",Trg);
+		EBuf = [];
+		for (var j=0; j<Trg.length; j++) {
+			if (isInCircle(i,j)) {
+				EBuf.push(Trg[j][0]); // TODO: if alread exists, delete from EBuf
+				EBuf.push(Trg[j][1]); // instead of adding a second one
+				EBuf.push(Trg[j][2]);
+
+				Trg.splice(j,1);
+				j--;
+			}
+		}
+		EBuf.sort();
 		/*
-			TODO: Add vertice to triangulation like in following pseudocode
-			initialize the edge buffer
+			TODO: Add vertex to triangulation like in following pseudocode
+			//initialize the edge buffer
 			for each triangle currently in the triangle list
 				 calculate the triangle circumcircle center and radius
 				 if the point lies in the triangle circumcircle then
@@ -74,6 +94,25 @@ function delaunay() {
 				 and the edges of the enclosing polygon
 		*/
 	}
+}
+
+// Adds edge to buffer, or deletes it if it's already there
+function toggleEBuf(a) {
+	// TODO
+}
+
+/*
+	Checks whether given point is inside the triangle's circumcircle
+	a,t - indicces in respective sets
+*/
+function isInCircle(a,t) {
+	var distx = G[a]._x - Trg[t].centerx;
+	var disty = G[a]._y - Trg[t].centery;
+	var ret = (distx*distx + disty*disty) < Trg[t].crad2;
+	if (ret) {
+		console.log("in circle: ",a, distx*distx + disty*disty,"in",t,Trg[t].crad2);
+	}
+	return ret;
 }
 
 // Adds vertex. Returns index of the new vertex
@@ -94,8 +133,26 @@ function addEdge(a,b) {
 		G[b].adj.push(a);
 }
 
-// Returns TRUE iff there is an egde between a and b
-function checkForEdge(a,b) {
+// Adds a triangle of given vertices to the set
+function addTriangle(a,b,c) {
+	var sorter = [a,b,c];
+	sorter.sort();
+	var bx = G[b]._x - G[a]._x;
+	var by = G[b]._y - G[a]._y;
+	var cx = G[c]._x - G[a]._x;
+	var cy = G[c]._y - G[a]._y;
+	var rad = 2 * (bx*cy - by*cx);
+	Trg.push({
+		v: sorter,
+		centerx: (cy*(bx*bx + by*by) - by*(cx*cx + cy*cy)) / rad + G[a]._x,
+		centery: (bx*(cx*cx + cy*cy) - cx*(bx*bx + by*by)) / rad + G[a]._y,
+		crad2: bx*bx + by*by
+			// squared! there's no point in calculating sqrt twice while comparing
+	});
+}
+
+// Returns TRUE iff there is an edge between a and b
+function isAdjacent(a,b) {
 	return (G[a].adj.indexOf(b) != -1);
 }
 
@@ -103,12 +160,11 @@ function drawEdge(a,b) {
 	ctx.moveTo(G[a]._x, G[a]._y);
 	ctx.lineTo(G[b]._x, G[b]._y);
 	ctx.stroke();
-	console.log("Drawing",a,b);
 }
 
 function drawGraph() {
 	// Draws nodes
-	for (i in G) {
+	for (var i=0; i<G.length; i++) {
 		ctx.beginPath();
 		ctx.arc(G[i]._x, G[i]._y, 3, 0, 2*Math.PI);
 		ctx.stroke();
@@ -118,8 +174,7 @@ function drawGraph() {
 	var ai = 0;
 	function asyncChunk() {
 		// At a time, edges adjacent to a single node are drawn
-		console.log(ai, G[ai].adj);
-		for (j in G[ai].adj) {
+		for (var j=0; j<G[ai].adj.length; j++) {
 			drawEdge(ai,G[ai].adj[j]);
 		}
 		ai++;
