@@ -40,8 +40,7 @@ for (var i=0; i<NODE_COUNT; i++) {
 						200 + r * Math.sin(fi));
 }
 
-// Triangle set. A triangle is represented as an ordered set of 3 vertices.
-// Vertices are represented by their index.
+// Triangle set. Vertices are represented by their index.
 var Trg = [];
 
 drawGraph();
@@ -61,49 +60,50 @@ function delaunay() {
 	addEdge (NODE_COUNT+1, NODE_COUNT+2);
 	addTriangle (NODE_COUNT, NODE_COUNT+1, NODE_COUNT+2);
 
-	// Stores edges that may be removed after each search for 'bad' triangles
-	var EBuf;
+	var EBuf = []; // stores edges of 'bad' triangles
+	var VBuf = []; // stores vertices of resulting polygonal hole
 
-	for (var i=0; i<NODE_COUNT; i++) {
+	for (var i=0; i<NODE_COUNT; i++) { // for every vertex
 		console.log("i",i,"Trg is ",Trg);
-		EBuf = [];
-		for (var j=0; j<Trg.length; j++) {
+		EBuf = []; VBuf = [];
+		for (var j=0; j<Trg.length; j++) { // for every triangle
 			if (isInCircle(i,j)) {
-				EBuf.push(Trg[j][0]); // TODO: if alread exists, delete from EBuf
-				EBuf.push(Trg[j][1]); // instead of adding a second one
-				EBuf.push(Trg[j][2]);
+				toggleEBuf(Trg[j].v[0], Trg[j].v[1]); // add the triangle edges to the edge buffer
+				toggleEBuf(Trg[j].v[0], Trg[j].v[2]);
+				toggleEBuf(Trg[j].v[1], Trg[j].v[2]);
 
-				Trg.splice(j,1);
+				Trg.splice(j,1); // remove triangle from list
 				j--;
 			}
 		}
-		EBuf.sort();
-		/*
-			TODO: Add vertex to triangulation like in following pseudocode
-			//initialize the edge buffer
-			for each triangle currently in the triangle list
-				 calculate the triangle circumcircle center and radius
-				 if the point lies in the triangle circumcircle then
-						add the three triangle edges to the edge buffer
-						remove the triangle from the triangle list
-				 endif
-			endfor
-			delete all doubly specified edges from the edge buffer
-				 this leaves the edges of the enclosing polygon only
-			add to the triangle list all triangles formed between the point
-				 and the edges of the enclosing polygon
-		*/
+
+		// add triangles w/ edges from the processed vertex
+		for (var j=0; j<EBuf.length; j++) {
+			addTriangle(EBuf[j][0], EBuf[j][1], i);
+		}
+
+
+		// Adds edge to buffer, or deletes it if it's already there
+		function toggleEBuf(a,b) {
+			var edge = [a,b];
+			edge.sort(); // ensures uniqueness - necessary unlike in adj table
+
+			if(EBuf.indexOf(edge) == -1) { // edge not yet in EBuf
+				EBuf.push(edge);
+			} else { // edge already in EBuf, therefore adjacent to two badtriangles and not a part of triangulation
+				EBuf.splice(EBuf.indexOf(edge),1);
+				// delete from working graph too
+				G[a].adj.splice(G[a].adj.indexOf(b),1);
+				G[b].adj.splice(G[b].adj.indexOf(a),1);
+			}
+		}
 	}
 }
 
-// Adds edge to buffer, or deletes it if it's already there
-function toggleEBuf(a) {
-	// TODO
-}
 
 /*
 	Checks whether given point is inside the triangle's circumcircle
-	a,t - indicces in respective sets
+	a,t - indices in respective sets
 */
 function isInCircle(a,t) {
 	var distx = G[a]._x - Trg[t].centerx;
@@ -163,6 +163,8 @@ function drawEdge(a,b) {
 }
 
 function drawGraph() {
+	// TODO: Clear canvas
+
 	// Draws nodes
 	for (var i=0; i<G.length; i++) {
 		ctx.beginPath();
